@@ -1,7 +1,8 @@
 from datetime import timedelta
 import secrets
-from authlib.integrations.starlette_client import OAuth,OAuthError
-from fastapi import APIRouter, Depends, HTTPException,Request
+import os
+from authlib.integrations.starlette_client import OAuth, OAuthError
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 from authlib.oauth2.rfc6749 import OAuth2Token
@@ -20,10 +21,11 @@ router = APIRouter(
     tags=['auth']
 )
 
-GOOGLE_CLIENT_ID = "940039925996-dme45jmum3u5870lsslhb7d10vr8uef5.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
-GOOGLE_REDIRECT_URI = "http://127.0.0.1:8000/auth/callback/google"
-FRONTEND_URL = "http://localhost:3000"
+# Load sensitive information from environment variables
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 oauth = OAuth()
 oauth.register(
@@ -47,10 +49,7 @@ async def auth_google(request: Request, db: db_dependency):
     stored_state = request.session.get('oauth_state')
     received_state = request.query_params.get('state')
     
-    # Verify state
-    # if stored_state != received_state:
     logging.error(f"CSRF Warning! State mismatch: stored_state={stored_state}, received_state={received_state}")
-        # raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="CSRF token mismatch")
     try:
         token: OAuth2Token = await oauth.google.authorize_access_token(request)
         logging.info(f"Token received: {token}")
